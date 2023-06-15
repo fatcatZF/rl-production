@@ -38,25 +38,20 @@ def resource_schedule(env:simpy.Environment, factory:SimpleFactory, action:int):
 
 
 def produce_c1(env:simpy.Environment, factory:SimpleFactory, step_time):
-    start = env.now
-    current = start
     check_time = 0.5 # check the container of resources for c1 every 0.5 second
-    while current-start < step_time:
+    while True:
         if factory.resources_c1.level >= 2:
             yield factory.resources_c1.get(2) # use 2 units of resources 
             produce_time = max(random.gauss(3,0.3), 2.5)
             yield env.timeout(produce_time)
             yield factory.c1.put(1)
         else: yield env.timeout(check_time)
-        current = env.now
-
+        
 
 
 def produce_c2(env:simpy.Environment, factory:SimpleFactory, step_time):
-    start = env.now
-    current = start
     check_time = 0.5 # check the container of resources for c1 every 0.5 second
-    while current-start < step_time:
+    while True:
         if factory.resources_c2.level >= 1:
             yield factory.resources_c2.get(1) # use 1 unit of resources 
             produce_time = max(random.gauss(1,0.1), 0.8)
@@ -64,27 +59,19 @@ def produce_c2(env:simpy.Environment, factory:SimpleFactory, step_time):
             yield factory.c2.put(1)
             current = env.now
         else: yield env.timeout(check_time)
-        current = env.now
-
-
-
 
 
 def assemble(env:simpy.Environment, factory:SimpleFactory, step_time):
-    start = env.now
-    current = start
     check_time = 0.5 #check the containers of c1 and c2 every 0.5 second
-    n_products = 0
-    while current-start < step_time:
+    while True:
         if factory.c1.level >= 1 and factory.c2.level >=3:
             assemble_time = max(random.gauss(1.5,0.2),1)
             yield factory.c1.get(1)
             yield factory.c2.get(3)
             yield env.timeout(assemble_time)
             yield factory.products.put(1)
-            n_products += 1
         else: yield env.timeout(check_time)
-        current = env.now
+
     
 
 
@@ -126,6 +113,9 @@ class SimpleFactoryEnv(gym.Env):
         self.no_products_time = 0
         observation = self._get_obs()
         info = self._get_info()
+        self.produce_c1_gen = produce_c1(self.simpy_env, self.factory, self.step_time)
+        self.produce_c2_gen = produce_c2(self.simpy_env, self.factory, self.step_time)
+        self.assemble_gen = assemble(self.simpy_env, self.factory, self.step_time)
         return observation, info
 
     
@@ -137,9 +127,9 @@ class SimpleFactoryEnv(gym.Env):
         info = self._get_info()
 
         self.simpy_env.process(resource_schedule(self.simpy_env, self.factory, action))
-        self.simpy_env.process(produce_c1(self.simpy_env, self.factory, self.step_time))
-        self.simpy_env.process(produce_c2(self.simpy_env, self.factory, self.step_time))
-        self.simpy_env.process(assemble(self.simpy_env, self.factory, self.step_time))
+        self.simpy_env.process(self.produce_c1_gen)
+        self.simpy_env.process(self.produce_c2_gen)
+        self.simpy_env.process(self.assemble_gen)
 
         self.simpy_env.run(until=current+self.step_time)
 
