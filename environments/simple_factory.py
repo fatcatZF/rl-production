@@ -1,7 +1,7 @@
 import simpy 
 import random 
 import numpy as np
-import gym 
+import gymnasium as gym  
 
 class SimpleFactory:
     def __init__(self, env:simpy.Environment, resource_init:int=500):
@@ -76,7 +76,7 @@ def assemble(env:simpy.Environment, factory:SimpleFactory, step_time):
 
 
 
-class SimpleFactoryEnv(gym.Env):
+class SimpleFactoryGymEnv(gym.Env):
     def __init__(self, resource_init:int, step_time:float=2, max_episode_time:float=1500):
         super().__init__()
         self.simpy_env = simpy.Environment()
@@ -139,6 +139,6 @@ class SimpleFactoryEnv(gym.Env):
 
         terminated = (self.simpy_env.now >= self.max_episode_time) or (self.no_products_time>=5)    
 
-        return observation, reward, terminated, info
+        return observation, reward, terminated, False, info
 
 
