@@ -5,6 +5,7 @@ import time
 from collections import deque
 
 import torch 
+import torch.nn.functional as F 
 from torch.distributions import Categorical
 import torch.optim as optim 
 
@@ -29,6 +30,7 @@ def parse_args():
     parser.add_argument("--lr", type=float, default=5e-4, help="learning rate for optimization")
     parser.add_argument("--max-grad-norm", type=float, default=0.5, help="maximum norm of gradients")
     parser.add_argument("--num-episodes", type=int, default=50000, help="number of episodes for training")
+    parser.add_argument("--resource-init", type=int, default=500)
     return parser.parse_args()
 
 
@@ -55,7 +57,68 @@ def compute_Q_episode(rewards, values, gamma=0.99, est_depth=5):
             Qs.insert(0,discounted_rewards_sum+(gamma**est_depth)*value)
 
     return Qs 
+
+
+
+
             
+def train(num_episodes=50000, gamma=0.99, est_depth=5, 
+          lr=5e-4, actor_coeff=1, critic_coeff=0.5,
+          entropy_coeff=0.01, max_grad_norm=0.5, num_episodes_update=5, resource_init=500):
+    env = SimpleFactoryGymEnv(resource_init=resource_init)
+    n_obs = 3
+    n_action = env.action_space.n 
+    mlp_a2c = MLP_A2C(n_obs, n_action) 
+
+    optimizer = optim.Adam(mlp_a2c.parameters(), lr=lr)
+    optimizer.zero_grad()
+
+    for episode in range(num_episodes):
+        rewards = []
+        log_probs = []
+        values = []
+        entropies = []
+
+        obs, info = env.reset() # reset the environment
+
+        terminated = False
+        reward_episode = 0 
+
+        while not terminated:
+            state = torch.from_numpy(obs/500).float()
+            mlp_a2c.eval()
+            logits, v = mlp_a2c(state.unsqueeze(0)) #add batch dimension
+            action = Categorical(logits=logits.squeeze()).sample().item()
+            entropy = Categorical(logits=logits.squeeze()).entropy()
+            entropies.append(entropy)
+            log_prob = F.log_softmax(logits, dim=-1).squeeze()[action]
+            log_probs.append(log_prob)
+            values.append(v.squeeze())
+            obs, reward, terminated, _, info = env.step(action)
+            rewards.append(reward)
+            reward_episode += reward
+
+        log_probs = torch.stack(log_probs)
+        values = torch.stack(values)
+        entropies = torch.stack(entropies) 
+        values_list = values.tolist()
+        Qs = torch.tensor(compute_Q_episode(rewards, values_list, gamma, est_depth)).float()
+        As = Qs-values #compute advantages
+        actor_loss = -(As*log_probs).mean()/num_episodes_update
+        critic_loss = As.pow(2).mean()/num_episodes_update
+        entropy_loss = entropies.mean()/num_episodes_update
+
+        loss = actor_coeff*actor_loss + \
+               critic_coeff*critic_loss + \
+               entropy_coeff*entropy_loss
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(mlp_a2c.parameters(),max_grad_norm)
+
+        if (episode+1) % num_episodes_update==0:
+            optimizer.step()
+            optimizer.zero_grad()
+
+        print("episode: {}, reward: {}".format(episode+1, reward_episode))
 
 
 
