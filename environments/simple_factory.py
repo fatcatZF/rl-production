@@ -82,7 +82,7 @@ class SimpleFactoryGymEnv(gym.Env):
         self.simpy_env = simpy.Environment()
         self.factory = SimpleFactory(self.simpy_env, resource_init=resource_init)
         self.action_space = gym.spaces.Discrete(2)
-        self.observation_space = gym.spaces.Box(0,resource_init,shape=(3,),dtype=np.float32)
+        self.observation_space = gym.spaces.Box(0,1,shape=(3,),dtype=np.float32)
         self.resource_init = resource_init
         self.step_time = step_time
         self.max_episode_time = max_episode_time
