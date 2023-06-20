@@ -26,7 +26,7 @@ class MLP_A2C(nn.Module):
         """
         x = F.elu(self.bn1(self.l1(x)))
         x = F.elu(self.bn2(self.l2(x)))
-        actions = self.actor(x)
+        logits = self.actor(x)
         V = self.critic(x)
-        return actions, V  
+        return logits, V  
         
