@@ -116,20 +116,20 @@ def train(num_episodes=50000, gamma=0.99, est_depth=5,
             optimizer.step()
             optimizer.zero_grad()
         
-        # Test
-        reward_episode = 0
-        with torch.no_grad():
-            obs, info = env.reset() # reset the environment
-            terminated = False
-            while not terminated:
-                state = torch.from_numpy(obs).float()
-                mlp_a2c.eval()
-                logits, v = mlp_a2c(state.unsqueeze(0)) #add batch dimension 
-                action = torch.argmax(logits.squeeze()) #get deterministic action
-                obs, reward, terminated, _, info = env.step(action)
-                reward_episode += reward 
+            # Test
+            reward_episode = 0
+            with torch.no_grad():
+                obs, info = env.reset() # reset the environment
+                terminated = False
+                while not terminated:
+                    state = torch.from_numpy(obs).float()
+                    mlp_a2c.eval()
+                    logits, v = mlp_a2c(state.unsqueeze(0)) #add batch dimension 
+                    action = torch.argmax(logits.squeeze()).item() #get deterministic action
+                    obs, reward, terminated, _, info = env.step(action)
+                    reward_episode += reward 
 
-        print("episode: {}, reward: {}".format(episode+1, reward_episode))
+            print("episode: {}, reward: {}".format(episode+1, reward_episode))
 
 
 
