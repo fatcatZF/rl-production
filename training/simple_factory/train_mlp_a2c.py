@@ -52,7 +52,7 @@ def compute_Q_episode(rewards, values, gamma=0.99, est_depth=5):
             est_queue.appendleft(rewards[t])
             value = values[t+est_depth]
             discounted_rewards_sum = np.sum(np.array(est_queue)*gammas)
-            Qs.append(discounted_rewards_sum+(gamma**est_depth)*value)
+            Qs.insert(0,discounted_rewards_sum+(gamma**est_depth)*value)
 
     return Qs 
             
