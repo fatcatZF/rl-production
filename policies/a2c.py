@@ -1,14 +1,17 @@
 import torch.nn as nn 
 import torch.nn.functional as F
 
-class FC_A2C(nn.Module):
+class MLP_A2C(nn.Module):
+    """
+    Multi-layer perceptron advantage actor-critic
+    """
     def __init__(self, n_observation, n_action):
         """
         args:
           n_observation: dimensions of observation spaces
           n_action: number of actions
         """
-        super(FC_A2C, self).__init__()
+        super(MLP_A2C, self).__init__()
         self.l1 = nn.Linear(n_observation, 256)
         self.bn1 = nn.BatchNorm1d(256)
         self.l2 = nn.Linear(256,256)
