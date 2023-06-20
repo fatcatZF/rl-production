@@ -18,6 +18,16 @@ class MLP_A2C(nn.Module):
         self.bn2 = nn.BatchNorm1d(256)
         self.actor = nn.Linear(256, n_action)
         self.critic = nn.Linear(256,1)
+        self._init_weights()
+
+    def _init_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Linear):
+                nn.init.xavier_normal_(m.weight.data)
+                m.bias.data.fill_(0.1)
+            elif isinstance(m, nn.BatchNorm1d):
+                m.weight.data.fill_(1)
+                m.bias.data.zero_()
 
     def forward(self, x):
         """
