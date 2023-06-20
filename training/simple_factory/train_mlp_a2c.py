@@ -79,13 +79,14 @@ def train(num_episodes=50000, gamma=0.99, est_depth=5,
         values = []
         entropies = []
 
+        reward_episode = 0
+
         obs, info = env.reset() # reset the environment
 
         terminated = False
-        reward_episode = 0 
 
         while not terminated:
-            state = torch.from_numpy(obs/500).float()
+            state = torch.from_numpy(obs).float()
             mlp_a2c.eval()
             logits, v = mlp_a2c(state.unsqueeze(0)) #add batch dimension
             action = Categorical(logits=logits.squeeze()).sample().item()
@@ -96,7 +97,9 @@ def train(num_episodes=50000, gamma=0.99, est_depth=5,
             values.append(v.squeeze())
             obs, reward, terminated, _, info = env.step(action)
             rewards.append(reward)
-            reward_episode += reward
+            reward_episode += reward 
+        
+        mlp_a2c.train()
 
         log_probs = torch.stack(log_probs)
         values = torch.stack(values)
@@ -117,6 +120,19 @@ def train(num_episodes=50000, gamma=0.99, est_depth=5,
         if (episode+1) % num_episodes_update==0:
             optimizer.step()
             optimizer.zero_grad()
+        
+            # Test
+            #reward_episode = 0
+            #with torch.no_grad():
+            #    obs, info = env.reset() # reset the environment
+            #    terminated = False
+            #    while not terminated:
+            #        state = torch.from_numpy(obs).float()
+            #        mlp_a2c.eval()
+            #        logits, v = mlp_a2c(state.unsqueeze(0)) #add batch dimension 
+            #        action = torch.argmax(logits.squeeze()).item() #get deterministic action
+            #        obs, reward, terminated, _, info = env.step(action)
+            #        reward_episode += reward 
 
         print("episode: {}, reward: {}".format(episode+1, reward_episode))
 

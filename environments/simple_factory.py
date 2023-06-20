@@ -82,15 +82,17 @@ class SimpleFactoryGymEnv(gym.Env):
         self.simpy_env = simpy.Environment()
         self.factory = SimpleFactory(self.simpy_env, resource_init=resource_init)
         self.action_space = gym.spaces.Discrete(2)
-        self.observation_space = gym.spaces.Box(0,resource_init,shape=(3,),dtype=np.int32)
+        self.observation_space = gym.spaces.Box(0,1,shape=(3,),dtype=np.float32)
         self.resource_init = resource_init
         self.step_time = step_time
         self.max_episode_time = max_episode_time
         self.no_products_time = 0
 
     def _get_obs(self):
-        return np.array([self.factory.resources.level, self.factory.resources_c1.level, self.factory.resources_c2.level], 
-                        dtype=np.int32)
+        return np.array([self.factory.resources.level/self.factory.resources.capacity, 
+                         self.factory.resources_c1.level/self.factory.resources_c1.capacity, 
+                         self.factory.resources_c2.level/self.factory.resources_c2.capacity], 
+                        dtype=np.float32)
     
     def _get_info(self):
         return {"resources":self.factory.resources.level, 
@@ -123,8 +125,8 @@ class SimpleFactoryGymEnv(gym.Env):
         
         current = self.simpy_env.now 
         current_products = self.factory.products.level
-        observation = self._get_obs()
-        info = self._get_info()
+        #observation = self._get_obs()
+        #info = self._get_info()
 
         self.simpy_env.process(resource_schedule(self.simpy_env, self.factory, action))
         self.simpy_env.process(self.produce_c1_gen)
@@ -132,6 +134,9 @@ class SimpleFactoryGymEnv(gym.Env):
         self.simpy_env.process(self.assemble_gen)
 
         self.simpy_env.run(until=current+self.step_time)
+        
+        observation = self._get_obs()
+        info = self._get_info()
 
         reward = self.factory.products.level - current_products    
 
