@@ -92,7 +92,7 @@ class SimpleFactoryGymEnv(gym.Env):
         return np.array([self.factory.resources.level/self.factory.resources.capacity, 
                          self.factory.resources_c1.level/self.factory.resources_c1.capacity, 
                          self.factory.resources_c2.level/self.factory.resources_c2.capacity], 
-                        dtype=np.int32)
+                        dtype=np.float32)
     
     def _get_info(self):
         return {"resources":self.factory.resources.level, 
