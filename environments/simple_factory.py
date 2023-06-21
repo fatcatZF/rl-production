@@ -132,7 +132,7 @@ class SimpleFactoryGymEnv(gym.Env):
     
     def step(self, action):
         
-        dispatch_cost = 0 if action==2 else 0.1 #dispatch cost 
+        dispatch_cost = 0 if action==2 else 0.01 #dispatch cost 
 
         current_products = self.factory.products.level
         
