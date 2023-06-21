@@ -123,7 +123,7 @@ def train(num_episodes=50000, gamma=0.99, est_depth=5,
         
             
 
-        print("episode: {}, reward: {}, finish time: {}".format(episode+1, reward_episode, info["current_time"]))
+        print("episode: {}, reward: {}, finish time: {}, total products: {}".format(episode+1, reward_episode, info["current_time"], info["products"]))
 
 
 
