@@ -64,8 +64,8 @@ def compute_Q_episode(rewards, values, gamma=0.99, est_depth=5):
             
 def train(num_episodes=50000, gamma=0.99, est_depth=5, 
           lr=5e-4, actor_coeff=1, critic_coeff=0.5,
-          entropy_coeff=0.01, max_grad_norm=0.5, num_episodes_update=5, resource_init=500):
-    env = SimpleFactoryGymEnv(resource_init=resource_init)
+          entropy_coeff=0.01, max_grad_norm=0.5, num_episodes_update=5):
+    env = SimpleFactoryGymEnv()
     n_obs = 3
     n_action = env.action_space.n 
     mlp_a2c = MLP_A2C(n_obs, n_action) 
