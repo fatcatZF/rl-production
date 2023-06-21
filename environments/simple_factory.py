@@ -87,7 +87,7 @@ def assemble(env:simpy.Environment, factory:SimpleFactory):
 
 
 class SimpleFactoryGymEnv(gym.Env):
-    def __init__(self, resource_init:int, max_episode_time:float=1000):
+    def __init__(self, resource_init:int=500, max_episode_time:float=1000):
         super().__init__()
         self.simpy_env = simpy.Environment()
         self.factory = SimpleFactory(self.simpy_env, resource_init=resource_init)
