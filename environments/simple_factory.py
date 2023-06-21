@@ -87,14 +87,14 @@ def assemble(env:simpy.Environment, factory:SimpleFactory):
 
 
 class SimpleFactoryGymEnv(gym.Env):
-    def __init__(self, resource_init:int=500, max_episode_time:float=1000):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.simpy_env = simpy.Environment()
-        self.factory = SimpleFactory(self.simpy_env, resource_init=resource_init)
+        self.factory = SimpleFactory(self.simpy_env, resource_init=500)
         self.action_space = gym.spaces.Discrete(3)
         self.observation_space = gym.spaces.Box(0,1,shape=(3,),dtype=np.float32)
-        self.resource_init = resource_init
-        self.max_episode_time = max_episode_time
+        self.resource_init = 500
+        self.max_episode_time = 800
         self.no_products_time = 0
 
     def _get_obs(self):
