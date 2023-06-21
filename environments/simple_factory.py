@@ -39,6 +39,9 @@ def resource_schedule(env:simpy.Environment, factory:SimpleFactory, action:int):
         else:
             yield env.timeout(check_time)
     
+    elif action==2: # do nothing
+        yield env.timeout(check_time)
+    
     else:
         yield env.timeout(0)
 
@@ -84,11 +87,11 @@ def assemble(env:simpy.Environment, factory:SimpleFactory):
 
 
 class SimpleFactoryGymEnv(gym.Env):
-    def __init__(self, resource_init:int, max_episode_time:float=1500.0):
+    def __init__(self, resource_init:int, max_episode_time:float=1000):
         super().__init__()
         self.simpy_env = simpy.Environment()
         self.factory = SimpleFactory(self.simpy_env, resource_init=resource_init)
-        self.action_space = gym.spaces.Discrete(2)
+        self.action_space = gym.spaces.Discrete(3)
         self.observation_space = gym.spaces.Box(0,1,shape=(3,),dtype=np.float32)
         self.resource_init = resource_init
         self.max_episode_time = max_episode_time
@@ -129,6 +132,8 @@ class SimpleFactoryGymEnv(gym.Env):
     
     def step(self, action):
         
+        dispatch_cost = 0 if action==2 else 0.2 #dispatch cost 
+
         current_products = self.factory.products.level
         
 
@@ -149,6 +154,6 @@ class SimpleFactoryGymEnv(gym.Env):
 
         terminated = (self.simpy_env.now >= self.max_episode_time) or (self.no_products_time>=5)    
 
-        return observation, reward, terminated, False, info
+        return observation, reward-dispatch_cost, terminated, False, info
 
 
