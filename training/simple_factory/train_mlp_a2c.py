@@ -134,7 +134,7 @@ def train(num_episodes=50000, gamma=0.99, est_depth=5,
             #        obs, reward, terminated, _, info = env.step(action)
             #        reward_episode += reward 
 
-        print("episode: {}, reward: {}".format(episode+1, reward_episode))
+        print("episode: {}, reward: {}, finish time: {}".format(episode+1, reward_episode, info["current_time"]))
 
 
 
