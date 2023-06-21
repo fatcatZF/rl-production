@@ -20,18 +20,24 @@ class SimpleFactory:
 
 
 def resource_schedule(env:simpy.Environment, factory:SimpleFactory, action:int):
-    dispatch_time = 0
+    check_time = 1
     if action==0: # send resource to produce c1
-        yield factory.resources.get(1) 
-        dispatch_time = max(random.gauss(1, 0.1),0.8)
-        yield env.timeout(dispatch_time)
-        yield factory.resources_c1.put(1) 
+        if factory.resources.level >= 1:
+            yield factory.resources.get(1) 
+            dispatch_time = max(random.gauss(1, 0.1),0.7)
+            yield env.timeout(dispatch_time)
+            yield factory.resources_c1.put(1) 
+        else:
+            yield env.timeout(check_time)
         
     elif action==1: #send resource to produce c2
-        yield factory.resources.get(1)  
-        dispatch_time = max(random.gauss(1,0.1), 0.8)
-        yield env.timeout(dispatch_time)
-        yield factory.resources_c2.put(1)
+        if factory.resources.level >= 1:
+            yield factory.resources.get(1)  
+            dispatch_time = max(random.gauss(1,0.1), 0.7)
+            yield env.timeout(dispatch_time)
+            yield factory.resources_c2.put(1)
+        else:
+            yield env.timeout(check_time)
     
     else:
         yield env.timeout(0)
@@ -78,14 +84,13 @@ def assemble(env:simpy.Environment, factory:SimpleFactory):
 
 
 class SimpleFactoryGymEnv(gym.Env):
-    def __init__(self, resource_init:int, step_time:float=2, max_episode_time:float=1500):
+    def __init__(self, resource_init:int, max_episode_time:float=1500.0):
         super().__init__()
         self.simpy_env = simpy.Environment()
         self.factory = SimpleFactory(self.simpy_env, resource_init=resource_init)
         self.action_space = gym.spaces.Discrete(2)
         self.observation_space = gym.spaces.Box(0,1,shape=(3,),dtype=np.float32)
         self.resource_init = resource_init
-        self.step_time = step_time
         self.max_episode_time = max_episode_time
         self.no_products_time = 0
 
@@ -124,20 +129,21 @@ class SimpleFactoryGymEnv(gym.Env):
     
     def step(self, action):
         
-        current = self.simpy_env.now 
         current_products = self.factory.products.level
+        
 
-        self.simpy_env.process(resource_schedule(self.simpy_env, self.factory, action))
+        schedule_event = self.simpy_env.process(resource_schedule(self.simpy_env, self.factory, action))
         self.simpy_env.process(self.produce_c1_gen)
         self.simpy_env.process(self.produce_c2_gen)
         self.simpy_env.process(self.assemble_gen)
 
-        self.simpy_env.run(until=current+self.step_time)
+        self.simpy_env.run(until=schedule_event)
         
         observation = self._get_obs()
         info = self._get_info()
 
-        reward = self.factory.products.level - current_products    
+        reward = self.factory.products.level - current_products  
+        
 
         self._check_products_status()
 
