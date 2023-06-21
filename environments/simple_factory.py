@@ -5,17 +5,18 @@ import gymnasium as gym
 
 class SimpleFactory:
     def __init__(self, env:simpy.Environment, resource_init:int=500):
-        self.resources = simpy.Container(env, capacity=resource_init, init=resource_init)
         # Total resources
-        self.resources_c1 = simpy.Container(env, capacity=resource_init, init=0)
-        # Resources scheduled for producing component c1
-        self.resources_c2 = simpy.Container(env, capacity=resource_init, init=0)
-        #resources scheduled for producing component c2
-        self.c1 = simpy.Container(env, capacity=resource_init, init=0)
-        # Components 1
-        self.c2 = simpy.Container(env, capacity=resource_init, init=0)
-        # Components 2
-        self.products = simpy.Container(env, capacity=resource_init, init=0)
+        self.resources = simpy.Container(env, capacity=resource_init, init=resource_init)
+        # Resources (cache) scheduled for producing component c1
+        self.resources_c1 = simpy.Container(env, capacity=3, init=0)
+        # Resources (cache) scheduled for producing component c2
+        self.resources_c2 = simpy.Container(env, capacity=4, init=0)
+        # components c1
+        self.c1 = simpy.Container(env, capacity=10, init=0)
+        # components c2
+        self.c2 = simpy.Container(env, capacity=10, init=0)
+        # Products
+        self.products = simpy.Container(env, capacity=500, init=0)
 
 
 def resource_schedule(env:simpy.Environment, factory:SimpleFactory, action:int):
@@ -37,7 +38,7 @@ def resource_schedule(env:simpy.Environment, factory:SimpleFactory, action:int):
 
 
 
-def produce_c1(env:simpy.Environment, factory:SimpleFactory, step_time):
+def produce_c1(env:simpy.Environment, factory:SimpleFactory):
     check_time = 0.5 # check the container of resources for c1 every 0.5 second
     while True:
         if factory.resources_c1.level >= 2:
@@ -49,7 +50,7 @@ def produce_c1(env:simpy.Environment, factory:SimpleFactory, step_time):
         
 
 
-def produce_c2(env:simpy.Environment, factory:SimpleFactory, step_time):
+def produce_c2(env:simpy.Environment, factory:SimpleFactory):
     check_time = 0.5 # check the container of resources for c1 every 0.5 second
     while True:
         if factory.resources_c2.level >= 1:
@@ -61,7 +62,7 @@ def produce_c2(env:simpy.Environment, factory:SimpleFactory, step_time):
         else: yield env.timeout(check_time)
 
 
-def assemble(env:simpy.Environment, factory:SimpleFactory, step_time):
+def assemble(env:simpy.Environment, factory:SimpleFactory):
     check_time = 0.5 #check the containers of c1 and c2 every 0.5 second
     while True:
         if factory.c1.level >= 1 and factory.c2.level >=3:
@@ -115,9 +116,9 @@ class SimpleFactoryGymEnv(gym.Env):
         self.no_products_time = 0
         observation = self._get_obs()
         info = self._get_info()
-        self.produce_c1_gen = produce_c1(self.simpy_env, self.factory, self.step_time)
-        self.produce_c2_gen = produce_c2(self.simpy_env, self.factory, self.step_time)
-        self.assemble_gen = assemble(self.simpy_env, self.factory, self.step_time)
+        self.produce_c1_gen = produce_c1(self.simpy_env, self.factory)
+        self.produce_c2_gen = produce_c2(self.simpy_env, self.factory)
+        self.assemble_gen = assemble(self.simpy_env, self.factory)
         return observation, info
 
     
@@ -125,8 +126,6 @@ class SimpleFactoryGymEnv(gym.Env):
         
         current = self.simpy_env.now 
         current_products = self.factory.products.level
-        #observation = self._get_obs()
-        #info = self._get_info()
 
         self.simpy_env.process(resource_schedule(self.simpy_env, self.factory, action))
         self.simpy_env.process(self.produce_c1_gen)
