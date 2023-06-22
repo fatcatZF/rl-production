@@ -1,6 +1,7 @@
 import argparse
 import os 
 import time 
+import datetime
 
 from collections import deque
 
@@ -64,14 +65,26 @@ def compute_Q_episode(rewards, values, gamma=0.99, est_depth=5):
             
 def train(num_episodes=50000, gamma=0.99, est_depth=5, 
           lr=5e-4, actor_coeff=1, critic_coeff=0.5,
-          entropy_coeff=0.01, max_grad_norm=0.5, num_episodes_update=5):
+          entropy_coeff=0.01, max_grad_norm=0.5, num_episodes_update=5,
+          log_dir="training/simple_factory/logs"):
     env = SimpleFactoryGymEnv()
     n_obs = 3
     n_action = env.action_space.n 
     mlp_a2c = MLP_A2C(n_obs, n_action) 
+  
+    # Save Location
+    now = datetime.datetime.now()
+    timestamp = now.isoformat()
+    save_folder = "{}/{}".format(log_dir, timestamp)
+    os.mkdir(save_folder)
+    print("policy will be saved at {}".format(save_folder))
+    policy_file = os.path.join(save_folder, "mlp_a2c.pt")
 
     optimizer = optim.Adam(mlp_a2c.parameters(), lr=lr)
     optimizer.zero_grad()
+
+    rewards_episode = deque(maxlen=num_episodes_update)
+    average_rewards_episode_max = 0.
 
     for episode in range(num_episodes):
         rewards = []
@@ -99,6 +112,8 @@ def train(num_episodes=50000, gamma=0.99, est_depth=5,
             rewards.append(reward)
             reward_episode += reward 
         
+        rewards_episode.append(reward_episode)
+
         mlp_a2c.train()
 
         log_probs = torch.stack(log_probs)
@@ -117,13 +132,22 @@ def train(num_episodes=50000, gamma=0.99, est_depth=5,
         loss.backward()
         torch.nn.utils.clip_grad_norm_(mlp_a2c.parameters(),max_grad_norm)
 
+        print("episode: {}, reward: {:.2f}, finish time: {:.2f}, total products: {}".format(episode+1, reward_episode, info["current_time"], info["products"]))
+
         if (episode+1) % num_episodes_update==0:
+            average_rewards_episode = np.mean(rewards_episode)
+            if average_rewards_episode > average_rewards_episode_max:
+                average_rewards_episode_max = average_rewards_episode
+                print("Best Average Episode Reward: {:.2f}".format(average_rewards_episode_max))
+                torch.save(mlp_a2c, policy_file)
+                print("Best Policy So Far, Saving...")
+
             optimizer.step()
             optimizer.zero_grad()
         
             
 
-        print("episode: {}, reward: {}, finish time: {}, total products: {}".format(episode+1, reward_episode, info["current_time"], info["products"]))
+        
 
 
 
