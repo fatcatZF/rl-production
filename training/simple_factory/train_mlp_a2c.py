@@ -22,7 +22,7 @@ def parse_args():
     parser = argparse.ArgumentParser("MLP A2C for Simple Factory")
     parser.add_argument("--seed", type=int, default=42, help="random seed")
     parser.add_argument("--gamma", type=float, default=0.99, help="discount factor")
-    parser.add_argument("--log-dir", type=str, default="./logs", help="Where to save log files")
+    parser.add_argument("--log-dir", type=str, default="training/simple_factory/logs", help="Where to save log files")
     parser.add_argument("--est-depth", type=int, default=5, help="number of Monte Carlo steps (estimation depth) for estimating TD-error")
     parser.add_argument("--num-episodes-update", type=int, default=5, help="number of episodes to update policy")
     parser.add_argument("--actor-loss-coeff", type=float, default=1.0, help="actor loss coefficient")
@@ -75,6 +75,8 @@ def train(num_episodes=50000, gamma=0.99, est_depth=5,
     # Save Location
     now = datetime.datetime.now()
     timestamp = now.isoformat()
+    if not os.path.exists(log_dir):
+        os.mkdir(log_dir)
     save_folder = "{}/{}".format(log_dir, timestamp)
     os.mkdir(save_folder)
     print("policy will be saved at {}".format(save_folder))
