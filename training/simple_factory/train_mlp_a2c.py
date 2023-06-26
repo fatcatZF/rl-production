@@ -27,10 +27,10 @@ def parse_args():
     parser.add_argument("--num-episodes-update", type=int, default=5, help="number of episodes to update policy")
     parser.add_argument("--actor-loss-coeff", type=float, default=1.0, help="actor loss coefficient")
     parser.add_argument("--critic-loss-coeff", type=float, default=0.5, help="critic loss coefficient")
-    parser.add_argument("--entropy-loss-coefficient", type=float, default=0.01, help="entropy loss coefficient (for exploration)")
+    parser.add_argument("--entropy-loss-coeff", type=float, default=0.01, help="entropy loss coefficient (for exploration)")
     parser.add_argument("--lr", type=float, default=5e-4, help="learning rate for optimization")
     parser.add_argument("--max-grad-norm", type=float, default=0.5, help="maximum norm of gradients")
-    parser.add_argument("--num-episodes", type=int, default=50000, help="number of episodes for training")
+    parser.add_argument("--num-episodes", type=int, default=500, help="number of episodes for training")
     parser.add_argument("--resource-init", type=int, default=500)
     return parser.parse_args()
 
@@ -156,3 +156,7 @@ def train(num_episodes=50000, gamma=0.99, est_depth=5,
 
 if __name__ == "__main__":
     args = parse_args()
+    print(args)
+    train(args.num_episodes, args.gamma, args.est_depth, args.lr, 
+          args.actor_loss_coeff, args.critic_loss_coeff, args.entropy_loss_coeff,
+          args.max_grad_norm, args.num_episodes_update, args.log_dir)
