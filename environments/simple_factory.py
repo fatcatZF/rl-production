@@ -87,8 +87,8 @@ def assemble(env:simpy.Environment, factory:SimpleFactory):
 
 
 class SimpleFactoryGymEnv(gym.Env):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, env_config=None): # The env_config parameter is for ray rllib environment
+        super().__init__()
         self.simpy_env = simpy.Environment()
         self.factory = SimpleFactory(self.simpy_env, resource_init=500)
         self.action_space = gym.spaces.Discrete(3)
